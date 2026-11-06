@@ -1,0 +1,18 @@
+[project]
+name = "eventflow"
+version = "1.0.0"
+description = "Batch pipeline for the GH Archive feed: lake, Write-Audit-Publish, star schema, and a measure of how much of GitHub the feed really saw"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["eventflow"]
+
+[tool.ruff]
+line-length = 130
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
