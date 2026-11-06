@@ -1,98 +1,103 @@
 # eventflow
 
-A batch data pipeline that collects log events from three sources, lands them in an S3/Parquet
-data lake, models them into a PostgreSQL star schema warehouse, and serves daily metrics,
-data quality results and a dashboard. It covers the full path end to end:
-ingestion, transformation at scale, data modeling, data quality, monitoring and query tuning.
+A batch pipeline over [GH Archive](https://www.gharchive.org/), the public record of GitHub activity. It lands 78 days of raw events (107.6M events, 31.7 GB compressed), validates each day before anyone can query it, and loads a star schema in PostgreSQL. It also measures something most users of this dataset never check: how much of GitHub the archive actually saw.
+
+The answer changes how the data can be used.
+
+![Events captured against ids allocated](docs/figures/capture.png)
+
+GitHub allocates a sequential id to every event, whether or not it reaches the archive, so the ids give an independent measure of the source. Over this period the archive's daily volume swings 249× while GitHub's id allocation follows a normal weekly cycle. Push events are missing from 27% of hours, in files that still download and parse without error.
+
+## Findings
+
+- **Raw archive counts here reflect the feed, not GitHub.** Loss is close to uniform across event types: a 74× capture range moves star share only between 6.6% and 7.5%, which is what makes reweighting valid. Doing so removes 7 of the top 20 repos by raw stars.
+- **Pushes vanish.** They are absent from 507 of 1,872 hours and almost entirely after October 26.
+- **GitHub's ids climbed while archive counts fell.** Weekday id allocation for pull requests, issues and stars rose 61% over 11 weeks.
+- **Id rate is not a general outage detector.** On held-out data it caught 9 of 34 published incidents with 31% precision, and the match rate was not significantly better than chance (p = 0.081). It does see write-path outages: the September 13 drop began 31 minutes before GitHub posted the incident.
+
+Method, caveats and charts are in [docs/findings.md](docs/findings.md).
+
+## Architecture
 
 ```mermaid
 flowchart LR
-  A[Clickstream JSON<br/>web, iOS, Android] --> R
-  B[Web server<br/>access logs] --> R
-  C[(OLTP PostgreSQL<br/>orders, 3NF)] -- incremental extract<br/>watermark --> R
-  R[Raw zone<br/>local or S3<br/>dt= partitions] --> S[PySpark<br/>parse, validate, de-dupe,<br/>sessionize]
-  S --> Q[Quarantine<br/>bad records + reason]
-  S --> P[Curated zone<br/>Parquet, partitioned by event_date]
-  P -- COPY + upserts --> W[(Warehouse<br/>star schema)]
-  W --> M[Marts<br/>materialized views]
-  M --> D[Dashboard]
-  W --> DQ[Data quality checks<br/>ops.dq_results]
+    A[GH Archive hourly files] --> B[Verified raw landing]
+    S[GitHub status API] --> B
+    B --> C[Spark transform]
+    C --> D[Run-scoped Parquet]
+    C --> Q[Quarantine]
+    D --> E{Audit}
+    E -- pass --> F[Publish pointer]
+    E -- fail --> X[Stop: last good data keeps serving]
+    F --> G[COPY and merge]
+    G --> H[(PostgreSQL star schema)]
+    H --> I[Marts, detector, report]
 ```
 
-## Results from a full run
+Each stage is a CLI command, and [the Airflow DAG](dags/eventflow_daily.py) runs those same commands, so anything scheduled can be rerun by hand.
 
-| Metric | Value |
+## How it works
+
+**Landing is verified.** Each hour is checked for declared size and gzip integrity, and its lines are counted independently of Spark. Raw objects are never modified, so any day can be reprocessed.
+
+**Write-Audit-Publish.** A transform writes to a new run-scoped path that nothing reads. Audits run there, and only a pass moves the pointer in `ops.published_partitions`. A failed audit leaves the warehouse on its last good data with no cleanup.
+
+**Every input line is accounted for.** The audit reconciles Spark's output against the landing manifest. The full run balances exactly:
+
+| | Lines |
 |---|---:|
-| Clickstream lines read | 2,021,627 |
-| Quarantined (malformed JSON, missing fields, unknown event types) | 8,211 (0.41%) |
-| Duplicate deliveries removed | 19,540 |
-| Events loaded into `fact_events` | 1,993,876 |
-| Sessions built (30-minute inactivity rule) | 172,156 |
-| Access-log lines read / quarantined | 994,000 / 1,977 |
-| Order lines (incremental extract from OLTP) | 10,282 |
-| Spark transform time (local, 2 cores) | 87.3 s |
-| Warehouse load time (COPY + upserts) | 39.8 s |
-| Re-run on the same input | identical row counts in every fact table (idempotent) |
+| Raw lines landed | 107,603,679 |
+| Unique valid events | 107,602,294 |
+| Duplicates removed | 417 |
+| Quarantined with a reason | 968 |
 
-The pipeline found every problem injected into the synthetic data: ~0.4% malformed clickstream records and ~0.2% garbled log lines were quarantined with a reason; ~1% duplicate deliveries were removed; late events landed in the partition of the day they happened; and the hourly 5xx check flagged the injected outage (7.7% errors at 2026-10-10 15:00 UTC vs a ~0.5% baseline).
+This check earned its place on its first real day, when it blocked a publish over a nine-line difference (541,942 against 541,933). The transform was right and the manifest was wrong: nine of that day's hour files have no newline after their last record, so counting newlines came up one short for each. The fix and a regression test are in [ingest.py](eventflow/ingest.py).
 
-**Query tuning** (`docs/query_tuning.md`, median of 5 `EXPLAIN ANALYZE` runs):
+**Blocking and warning are different things.** Corrupt or incomplete data blocks a publish. A thin feed only warns, because low capture is the true state of the source: 36 of the 78 days raised a warning, and blocking them would have discarded most of the dataset.
 
-| Query | Before (ms) | After (ms) | Change |
-|---|---:|---:|---|
-| Last 50 events for one customer (support/debugging lookup) | 200.54 | 0.02 | B-tree index on (customer_id, event_ts DESC) |
-| Revenue by category for the last 7 days | 2.65 | 0.06 | read pre-aggregated materialized view |
-| 5xx errors by endpoint during a 2-hour incident window | 69.93 | 2.0 | BRIN index on request_ts |
-| Daily funnel: sessions, active users, conversion | 127.89 | 0.03 | read pre-aggregated materialized view |
+**Loads are idempotent.** Each day loads in one transaction: dimensions upsert, facts delete and insert by day. Reloading a day leaves the warehouse row-for-row unchanged, and [the end-to-end script](scripts/e2e.sh) proves that on a real day alongside a blocked publish.
 
-![Dashboard](docs/dashboard.png)
+**History is kept.** `dim_repo` is a Type 2 dimension, so the 106,717 repo renames in this period keep facts under the name a repo had at the time. `fact_repo_daily` is range partitioned by month. New fields and event types in the source are tracked in `ops.schema_fields` and raised as warnings.
 
-## What each part does
+## The warehouse
 
-| Stage | Code | Key ideas |
-|---|---|---|
-| Generate sources | `eventflow/generate.py` | Zipf-like users, mixed time zones, duplicates, late and malformed records, an injected outage |
-| Extract | `eventflow/extract.py` | Incremental extract from the OLTP database using a high-water mark on `updated_at` |
-| Land | `eventflow/storage.py` | Raw zone kept immutable on S3 (boto3), partitioned by arrival date, re-downloadable for backfills |
-| Transform | `eventflow/transform.py` | Schema-on-read for JSON, regex parsing of logs, UTC normalization, de-duplication, 30-minute sessionization with window functions, quarantine with reasons, idempotent partition overwrite |
-| Load | `eventflow/load.py` | Bulk `COPY` into staging, set-based `ON CONFLICT` upserts into facts and dimensions in one transaction |
-| Model | `sql/oltp_schema.sql`, `sql/dw_schema.sql` | Normalized (3NF) source vs. dimensional star schema: `fact_events`, `fact_sessions`, `fact_order_items`, `fact_requests`; `dim_date`, `dim_customer`, `dim_product` |
-| Quality and monitoring | `eventflow/quality.py` | Row reconciliation (raw = valid + quarantined), quarantine and duplicate rates, freshness, referential integrity, hourly 5xx anomaly; every run and check is recorded in `ops.*` |
-| Serve | `sql/marts.sql`, `eventflow/report.py` | Daily KPI, category revenue and hourly ops marts; static HTML dashboard |
-| Tune | `eventflow/tune.py` | Before/after benchmark of report queries with indexes, BRIN and materialized views |
-| Orchestrate | `scripts/run_pipeline.sh` | Bash orchestration with per-step timing, retries for transient errors, non-zero exit on failed data quality |
+| Table | Rows | Grain |
+|---|---:|---|
+| `dw.fact_repo_daily` | 29.3M | Repo and day |
+| `dw.fact_star` | 1.2M | One star |
+| `dw.fact_feed_minute` | 190,912 | Minute and id sequence |
+| `dw.fact_type_hourly` | 59,629 | Hour, event type and actor class |
+| `dw.dim_repo` | 13.1M | Repo version (Type 2) |
+| `dw.dim_actor` | 6.9M | Account |
+| `dw.dim_incident` | 50 | Published incident |
 
-## Data model
-
-- **Grain**: `fact_events` = one clickstream event; `fact_sessions` = one user session;
-  `fact_order_items` = one order line; `fact_requests` = one HTTP request.
-- **Dimensions** are denormalized on purpose (category name copied onto `dim_product`), so analysts join once per dimension.
-- The **OLTP source** is normalized to 3NF: customers, categories, products, orders, order_items.
+Query tuning results, including an index that was measured and rejected, are in [docs/query_tuning.md](docs/query_tuning.md). The most-used query went from 286 ms to 0.77 ms.
 
 ## Run it
 
-Requirements: Python 3.10+, Java 17+ (for Spark), PostgreSQL 14+.
+Requires Python 3.10+, Java 17 and PostgreSQL. Set `EVENTFLOW_PG_DSN`, and either a local path or an `s3://` location for `EVENTFLOW_LAKE`.
 
 ```bash
-pip install -r requirements.txt
-createdb eventflow
-export EVENTFLOW_PG_DSN=postgresql://postgres:postgres@localhost:5432/eventflow
-make small      # ~2% of full size, about a minute
-make pipeline   # full size
-make tune       # query tuning benchmark -> docs/query_tuning.md
+make install
 make test
+make e2e        # one real day, a blocked publish and a reload
+make backfill   # the full 78 days
+make analyze
+make tune
+make report     # docs/results.json, docs/figures, docs/dashboard.html
 ```
 
-Land raw data in S3 instead of only on disk: `EVENTFLOW_STORAGE=s3 EVENTFLOW_S3_BUCKET=<bucket>` (uses your AWS credentials).
+Single steps work too:
 
-## Production version on AWS
+```bash
+python -m eventflow.cli run --start 2026-10-07 --end 2026-10-08
+```
 
-S3 for the raw and curated zones, AWS Glue or EMR for the Spark job, Redshift for the warehouse
-(`COPY` from S3), Step Functions or Amazon MWAA (Airflow) for orchestration, CloudWatch alarms on
-failed runs and data quality checks, and Kinesis Data Firehose if logs had to be collected in real time.
+CI runs lint, unit tests and the end-to-end script on a real archive day for every push.
 
-## Limitations
+## Limits
 
-- Data is synthetic, generated to look like a real store's traffic, with known problems injected.
-- Runs as a single-machine Spark job (local mode); the same code runs on a cluster.
-- `dim_customer` is a Type 1 dimension (history is overwritten); Type 2 history tracking is not implemented.
+- The full run was done on one 8-thread machine with 7 GB of memory, not a cluster. Transforms took 48 minutes in total, with a median of 37 seconds a day and a largest day of 4.1M rows.
+- The local filesystem held the lake for the full run. The S3 path was exercised on one real day against an S3-compatible test server, where it loaded the same row counts, but not against AWS itself.
+- The DAG has been run end to end with `airflow dags test` on one day, not left running on a schedule.
+- The detector is scored on 50 incidents and two months of data. See the [findings](docs/findings.md) for what that can and cannot support.

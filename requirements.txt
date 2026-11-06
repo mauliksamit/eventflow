@@ -3,9 +3,11 @@ psycopg[binary]>=3.2
 pyarrow>=17
 pandas>=2.2
 numpy>=1.26
-plotly>=5.24
+requests>=2.32
 boto3>=1.35
+plotly>=5.24
+kaleido>=1.0
 # dev
 pytest>=8
-moto[s3]>=5
+moto[s3,server]>=5
 ruff>=0.6

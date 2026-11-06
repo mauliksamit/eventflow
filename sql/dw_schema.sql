@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS dw.fact_feed_hourly (
     id_series     TEXT NOT NULL,
     events        BIGINT NOT NULL,
     est_total     DOUBLE PRECISION,
-    capture_rate  DOUBLE PRECISION,
+    capture_rate  DOUBLE PRECISION,          -- relative index: ids include non-public activity
     PRIMARY KEY (hour_ts, id_series)
 );
 
@@ -155,6 +155,23 @@ CREATE TABLE IF NOT EXISTS ops.schema_fields (
     first_seen    DATE NOT NULL,
     last_seen     DATE NOT NULL,
     PRIMARY KEY (event_type, field)
+);
+
+CREATE TABLE IF NOT EXISTS ops.analysis_results (
+    run_at        TIMESTAMPTZ PRIMARY KEY DEFAULT now(),
+    result        JSONB NOT NULL
+);
+
+-- Scored output of the feed anomaly detector, rebuilt in full by each analyze.
+CREATE TABLE IF NOT EXISTS ops.feed_episodes (
+    id_series     TEXT NOT NULL,
+    started_at    TIMESTAMPTZ NOT NULL,
+    ended_at      TIMESTAMPTZ NOT NULL,
+    windows       INT NOT NULL,
+    min_ratio     DOUBLE PRECISION NOT NULL,
+    incident_id   TEXT,                      -- the published incident it matched, if any
+    lead_minutes  DOUBLE PRECISION,          -- how long before that incident was posted
+    PRIMARY KEY (id_series, started_at)
 );
 
 CREATE TABLE IF NOT EXISTS ops.feed_anomalies (

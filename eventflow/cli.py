@@ -103,9 +103,13 @@ def main(argv: list[str]) -> int:
         from .report import build
         log.info("report written to %s", build(cfg))
     elif a.command == "tune":
+        from .report import build
         from .tune import benchmark
-        for r in benchmark(cfg):
-            log.info("%-26s %9.2f ms -> %8.2f ms (%sx)", r["query"], r["before_ms"], r["after_ms"], r["speedup"])
+        results = benchmark(cfg)
+        for r in results:
+            log.info("%-20s %9.2f ms -> %8.2f ms (%sx) %s", r["query"], r["before_ms"], r["after_ms"], r["speedup"],
+                     "kept" if r["kept"] else "rejected")
+        build(cfg, results)
     else:
         ap.error(f"unknown command {a.command!r}")
     return 0

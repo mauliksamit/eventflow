@@ -1,0 +1,732 @@
+{
+  "platform_catches": [
+    {
+      "drop_began": "2026-09-13 08:45:00+00:00",
+      "drop_ended": "2026-09-13 09:45:00+00:00",
+      "min_ratio": 0.562,
+      "lead_minutes": 31,
+      "incident": "Incident with several GitHub Services",
+      "impact": "critical",
+      "posted": "2026-09-13 09:16:11.480000+00:00"
+    },
+    {
+      "drop_began": "2026-10-26 18:15:00+00:00",
+      "drop_ended": "2026-10-26 18:45:00+00:00",
+      "min_ratio": 0.595,
+      "lead_minutes": 33,
+      "incident": "Incident with Actions, Issues, API Requests and Pull Requests",
+      "impact": "minor",
+      "posted": "2026-10-26 18:48:26.235000+00:00"
+    }
+  ],
+  "days": 78,
+  "hours": 1872,
+  "raw_lines": 107603679,
+  "raw_gb": 31.7,
+  "unique_events": 107602294,
+  "duplicates": 417,
+  "quarantined": 968,
+  "reconciles": true,
+  "transform_minutes": 48.0,
+  "repos": 13030868,
+  "repo_renames": 106717,
+  "actors": 6920524,
+  "stars": 1225412,
+  "fact_repo_daily_rows": 29298663,
+  "incidents": 50,
+  "ref_hours_present": 1365,
+  "ref_hours_total": 1872,
+  "ref_hours_missing_share": 0.271,
+  "collab_capture_daily_min": 0.00021,
+  "collab_capture_daily_max": 0.04973,
+  "collab_captured_daily_min": 6953,
+  "collab_captured_daily_max": 1729172,
+  "new_account_stars": 68154,
+  "dated_stars": 1212388,
+  "new_account_star_share": 0.056,
+  "repos_100_stars": 1131,
+  "repos_majority_new_accounts": 31,
+  "top20_overlap_naive_vs_weighted": 13,
+  "capture_mix": {
+    "capture_range": 73.6,
+    "star_share": [
+      0.066,
+      0.075
+    ],
+    "pull_request_share": [
+      0.37,
+      0.391
+    ]
+  },
+  "actor_mix": {
+    "bot": 0.294,
+    "ai_agent": 0.085,
+    "human": 0.621
+  },
+  "analysis": {
+    "grid": [
+      {
+        "recall": 0.062,
+        "matched": 1,
+        "episodes": 1,
+        "recalled": 1,
+        "incidents": 16,
+        "precision": 1.0,
+        "threshold": 0.6
+      },
+      {
+        "recall": 0.062,
+        "matched": 1,
+        "episodes": 1,
+        "recalled": 1,
+        "incidents": 16,
+        "precision": 1.0,
+        "threshold": 0.65
+      },
+      {
+        "recall": 0.062,
+        "matched": 1,
+        "episodes": 1,
+        "recalled": 1,
+        "incidents": 16,
+        "precision": 1.0,
+        "threshold": 0.7
+      },
+      {
+        "recall": 0.062,
+        "matched": 1,
+        "episodes": 2,
+        "recalled": 1,
+        "incidents": 16,
+        "precision": 0.5,
+        "threshold": 0.75
+      },
+      {
+        "recall": 0.062,
+        "matched": 1,
+        "episodes": 2,
+        "recalled": 1,
+        "incidents": 16,
+        "precision": 0.5,
+        "threshold": 0.8
+      },
+      {
+        "recall": 0.125,
+        "matched": 2,
+        "episodes": 8,
+        "recalled": 2,
+        "incidents": 16,
+        "precision": 0.25,
+        "threshold": 0.85
+      }
+    ],
+    "null": {
+      "p": 0.081,
+      "episodes": 32,
+      "null_p95": 11.0,
+      "observed": 10,
+      "null_mean": 5.4
+    },
+    "test": {
+      "all": {
+        "recall": 0.265,
+        "matched": 10,
+        "episodes": 32,
+        "recalled": 9,
+        "incidents": 34,
+        "precision": 0.312,
+        "threshold": 0.85
+      },
+      "platform": {
+        "recall": 0.2,
+        "matched": 4,
+        "episodes": 32,
+        "recalled": 3,
+        "incidents": 15,
+        "precision": 0.125,
+        "threshold": 0.85
+      },
+      "critical_or_major": {
+        "recall": 0.154,
+        "matched": 2,
+        "episodes": 32,
+        "recalled": 2,
+        "incidents": 13,
+        "precision": 0.062,
+        "threshold": 0.85
+      },
+      "platform_critical_or_major": {
+        "recall": 0.111,
+        "matched": 1,
+        "episodes": 32,
+        "recalled": 1,
+        "incidents": 9,
+        "precision": 0.031,
+        "threshold": 0.85
+      }
+    },
+    "train": {
+      "all": {
+        "recall": 0.125,
+        "matched": 2,
+        "episodes": 8,
+        "recalled": 2,
+        "incidents": 16,
+        "precision": 0.25,
+        "threshold": 0.85
+      },
+      "platform": {
+        "recall": 0.25,
+        "matched": 1,
+        "episodes": 8,
+        "recalled": 1,
+        "incidents": 4,
+        "precision": 0.125,
+        "threshold": 0.85
+      },
+      "critical_or_major": {
+        "recall": 0.25,
+        "matched": 1,
+        "episodes": 8,
+        "recalled": 1,
+        "incidents": 4,
+        "precision": 0.125,
+        "threshold": 0.85
+      },
+      "platform_critical_or_major": {
+        "recall": 1.0,
+        "matched": 1,
+        "episodes": 8,
+        "recalled": 1,
+        "incidents": 1,
+        "precision": 0.125,
+        "threshold": 0.85
+      }
+    },
+    "growth": {
+      "ref": {
+        "change": -0.139,
+        "last_days": [
+          "2026-10-06",
+          "2026-10-22"
+        ],
+        "first_days": [
+          "2026-08-21",
+          "2026-09-10"
+        ],
+        "last_ids_per_s": 1130,
+        "first_ids_per_s": 1312
+      },
+      "collab": {
+        "change": 0.613,
+        "last_days": [
+          "2026-10-23",
+          "2026-11-05"
+        ],
+        "first_days": [
+          "2026-08-20",
+          "2026-09-02"
+        ],
+        "last_ids_per_s": 1292,
+        "first_ids_per_s": 801
+      }
+    },
+    "test_grid": [
+      {
+        "recall": 0.0,
+        "matched": 0,
+        "episodes": 0,
+        "recalled": 0,
+        "incidents": 34,
+        "precision": 0.0,
+        "threshold": 0.6
+      },
+      {
+        "recall": 0.029,
+        "matched": 1,
+        "episodes": 2,
+        "recalled": 1,
+        "incidents": 34,
+        "precision": 0.5,
+        "threshold": 0.65
+      },
+      {
+        "recall": 0.059,
+        "matched": 3,
+        "episodes": 6,
+        "recalled": 2,
+        "incidents": 34,
+        "precision": 0.5,
+        "threshold": 0.7
+      },
+      {
+        "recall": 0.088,
+        "matched": 3,
+        "episodes": 9,
+        "recalled": 3,
+        "incidents": 34,
+        "precision": 0.333,
+        "threshold": 0.75
+      },
+      {
+        "recall": 0.176,
+        "matched": 6,
+        "episodes": 19,
+        "recalled": 6,
+        "incidents": 34,
+        "precision": 0.316,
+        "threshold": 0.8
+      },
+      {
+        "recall": 0.265,
+        "matched": 10,
+        "episodes": 32,
+        "recalled": 9,
+        "incidents": 34,
+        "precision": 0.312,
+        "threshold": 0.85
+      }
+    ],
+    "threshold": 0.85,
+    "detections": [
+      {
+        "impact": null,
+        "ended_at": "2026-08-29 09:15:00+00:00",
+        "incident": null,
+        "min_ratio": 0.788,
+        "started_at": "2026-08-29 06:15:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-09-01 10:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.797,
+        "started_at": "2026-09-01 10:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-09-02 01:00:00+00:00",
+        "incident": null,
+        "min_ratio": 0.812,
+        "started_at": "2026-09-02 00:15:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-09-03 15:45:00+00:00",
+        "incident": "Incident with Grok Copilot AI Model Provider",
+        "min_ratio": 0.81,
+        "started_at": "2026-09-03 15:15:00+00:00",
+        "lead_minutes": -58
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-09-07 19:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.729,
+        "started_at": "2026-09-07 14:30:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": "critical",
+        "ended_at": "2026-09-13 09:45:00+00:00",
+        "incident": "Incident with several GitHub Services",
+        "min_ratio": 0.562,
+        "started_at": "2026-09-13 08:45:00+00:00",
+        "lead_minutes": 31
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-09-22 01:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.801,
+        "started_at": "2026-09-22 01:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-09-25 23:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.817,
+        "started_at": "2026-09-25 23:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-06 11:00:00+00:00",
+        "incident": null,
+        "min_ratio": 0.761,
+        "started_at": "2026-10-06 08:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": "critical",
+        "ended_at": "2026-10-07 15:45:00+00:00",
+        "incident": "Incident with Git Operations, Pull Requests and Actions",
+        "min_ratio": 0.793,
+        "started_at": "2026-10-07 15:15:00+00:00",
+        "lead_minutes": 0
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-08 08:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.834,
+        "started_at": "2026-10-08 08:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-08 10:15:00+00:00",
+        "incident": null,
+        "min_ratio": 0.734,
+        "started_at": "2026-10-08 09:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-08 13:15:00+00:00",
+        "incident": null,
+        "min_ratio": 0.806,
+        "started_at": "2026-10-08 12:45:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-09 13:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.828,
+        "started_at": "2026-10-09 13:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-09 14:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.669,
+        "started_at": "2026-10-09 13:45:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-09 21:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.809,
+        "started_at": "2026-10-09 21:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-12 08:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.83,
+        "started_at": "2026-10-12 08:15:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-12 10:15:00+00:00",
+        "incident": null,
+        "min_ratio": 0.743,
+        "started_at": "2026-10-12 09:30:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-13 10:15:00+00:00",
+        "incident": null,
+        "min_ratio": 0.629,
+        "started_at": "2026-10-13 07:45:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-14 09:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.809,
+        "started_at": "2026-10-14 09:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-15 09:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.735,
+        "started_at": "2026-10-15 07:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-16 04:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.752,
+        "started_at": "2026-10-16 01:30:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-17 07:00:00+00:00",
+        "incident": null,
+        "min_ratio": 0.593,
+        "started_at": "2026-10-17 03:30:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-19 10:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.661,
+        "started_at": "2026-10-19 08:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-20 03:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.805,
+        "started_at": "2026-10-20 01:30:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-10-22 14:30:00+00:00",
+        "incident": "Incident with Actions",
+        "min_ratio": 0.738,
+        "started_at": "2026-10-22 12:15:00+00:00",
+        "lead_minutes": 123
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-10-23 04:30:00+00:00",
+        "incident": "Project updates delayed",
+        "min_ratio": 0.65,
+        "started_at": "2026-10-23 01:15:00+00:00",
+        "lead_minutes": -587
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-23 11:00:00+00:00",
+        "incident": null,
+        "min_ratio": 0.75,
+        "started_at": "2026-10-23 09:45:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-23 13:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.823,
+        "started_at": "2026-10-23 12:45:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-10-23 15:00:00+00:00",
+        "incident": "Disruption with Dependabot Alerts",
+        "min_ratio": 0.712,
+        "started_at": "2026-10-23 14:00:00+00:00",
+        "lead_minutes": 59
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-10-23 22:45:00+00:00",
+        "incident": "Grok 4.6 and Grok 4.7 Service Issues",
+        "min_ratio": 0.838,
+        "started_at": "2026-10-23 22:00:00+00:00",
+        "lead_minutes": 102
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-10-23 23:30:00+00:00",
+        "incident": "Grok 4.6 and Grok 4.7 Service Issues",
+        "min_ratio": 0.809,
+        "started_at": "2026-10-23 23:00:00+00:00",
+        "lead_minutes": 42
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-24 11:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.742,
+        "started_at": "2026-10-24 09:00:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-10-26 18:45:00+00:00",
+        "incident": "Incident with Actions, Issues, API Requests and Pull Requests",
+        "min_ratio": 0.595,
+        "started_at": "2026-10-26 18:15:00+00:00",
+        "lead_minutes": 33
+      },
+      {
+        "impact": "critical",
+        "ended_at": "2026-10-28 15:00:00+00:00",
+        "incident": "Disruption with some Copilot services",
+        "min_ratio": 0.619,
+        "started_at": "2026-10-28 12:30:00+00:00",
+        "lead_minutes": 103
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-10-29 09:30:00+00:00",
+        "incident": "Disruption with Copilot Cloud services",
+        "min_ratio": 0.722,
+        "started_at": "2026-10-29 07:00:00+00:00",
+        "lead_minutes": 200
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-30 08:45:00+00:00",
+        "incident": null,
+        "min_ratio": 0.732,
+        "started_at": "2026-10-30 06:15:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-10-31 08:00:00+00:00",
+        "incident": null,
+        "min_ratio": 0.811,
+        "started_at": "2026-10-31 06:45:00+00:00",
+        "lead_minutes": null
+      },
+      {
+        "impact": "minor",
+        "ended_at": "2026-11-04 08:15:00+00:00",
+        "incident": "Increased task-related errors for Copilot Mission Control",
+        "min_ratio": 0.742,
+        "started_at": "2026-11-04 05:45:00+00:00",
+        "lead_minutes": 180
+      },
+      {
+        "impact": null,
+        "ended_at": "2026-11-05 07:30:00+00:00",
+        "incident": null,
+        "min_ratio": 0.821,
+        "started_at": "2026-11-05 06:45:00+00:00",
+        "lead_minutes": null
+      }
+    ]
+  },
+  "tuning": [
+    {
+      "query": "repo_history",
+      "question": "daily activity for one repo across every name it has had",
+      "before_ms": 286.02,
+      "after_ms": 0.77,
+      "speedup": 370.8,
+      "index_build_s": 48.9,
+      "index_mb": 928.1,
+      "indexes": [
+        "ix_dim_repo_name",
+        "ix_dim_repo_id",
+        "ix_fact_repo_daily_repo"
+      ],
+      "kept": true,
+      "plan_before": [
+        "Parallel Seq Scan on dim_repo dim_repo_1",
+        "Index Scan using dim_repo_repo_id_valid_from_key on dim_repo",
+        "Seq Scan on dim_date d",
+        "Index Scan using fact_repo_daily_202608_pkey on fact_repo_daily_202608 f_1",
+        "Index Scan using fact_repo_daily_202609_pkey on fact_repo_daily_202609 f_2",
+        "Index Scan using fact_repo_daily_202610_pkey on fact_repo_daily_202610 f_3",
+        "Index Scan using fact_repo_daily_202611_pkey on fact_repo_daily_202611 f_4"
+      ],
+      "plan_after": [
+        "Index Scan using ix_dim_repo_name on dim_repo dim_repo_1",
+        "Index Scan using ix_dim_repo_id on dim_repo",
+        "Index Scan using fact_repo_daily_202608_repo_key_date_key_idx on fact_repo_daily_202608 f_1",
+        "Index Scan using fact_repo_daily_202609_repo_key_date_key_idx on fact_repo_daily_202609 f_2",
+        "Index Scan using fact_repo_daily_202610_repo_key_date_key_idx on fact_repo_daily_202610 f_3",
+        "Index Scan using fact_repo_daily_202611_repo_key_date_key_idx on fact_repo_daily_202611 f_4",
+        "Index Scan using dim_date_pkey on dim_date d"
+      ]
+    },
+    {
+      "query": "stargazers_of_repo",
+      "question": "who starred a repo, newest first",
+      "before_ms": 39.45,
+      "after_ms": 2.32,
+      "speedup": 17.0,
+      "index_build_s": 0.4,
+      "index_mb": 38.6,
+      "indexes": [
+        "ix_fact_star_repo"
+      ],
+      "kept": true,
+      "plan_before": [
+        "Index Scan using ix_dim_repo_name on dim_repo dim_repo_1",
+        "Parallel Seq Scan on fact_star s",
+        "Index Scan using ix_dim_repo_id on dim_repo"
+      ],
+      "plan_after": [
+        "Index Scan using ix_dim_repo_name on dim_repo dim_repo_1",
+        "Index Scan using ix_dim_repo_id on dim_repo",
+        "Index Scan using ix_fact_star_repo on fact_star s"
+      ]
+    },
+    {
+      "query": "stars_by_actor",
+      "question": "everything one account starred",
+      "before_ms": 33.12,
+      "after_ms": 1.55,
+      "speedup": 21.3,
+      "index_build_s": 0.4,
+      "index_mb": 38.6,
+      "indexes": [
+        "ix_fact_star_actor"
+      ],
+      "kept": true,
+      "plan_before": [
+        "Parallel Seq Scan on fact_star"
+      ],
+      "plan_after": [
+        "Bitmap Heap Scan on fact_star",
+        "Bitmap Index Scan on ix_fact_star_actor"
+      ]
+    },
+    {
+      "query": "stars_in_incident",
+      "question": "stars per minute around an incident",
+      "before_ms": 36.07,
+      "after_ms": 4.09,
+      "speedup": 8.8,
+      "index_build_s": 0.1,
+      "index_mb": 0.0,
+      "indexes": [
+        "ix_fact_star_time"
+      ],
+      "kept": true,
+      "plan_before": [
+        "Parallel Seq Scan on fact_star"
+      ],
+      "plan_after": [
+        "Bitmap Heap Scan on fact_star",
+        "Bitmap Index Scan on ix_fact_star_time"
+      ]
+    },
+    {
+      "query": "day_by_event_type",
+      "question": "one day of hourly counts by event type",
+      "before_ms": 0.35,
+      "after_ms": 0.25,
+      "speedup": 1.4,
+      "index_build_s": 0.2,
+      "index_mb": 3.3,
+      "indexes": [
+        "ix_fact_type_hour"
+      ],
+      "kept": false,
+      "plan_before": [
+        "Bitmap Heap Scan on fact_type_hourly",
+        "Bitmap Index Scan on fact_type_hourly_pkey"
+      ],
+      "plan_after": [
+        "Index Only Scan using ix_fact_type_hour on fact_type_hourly"
+      ]
+    }
+  ]
+}

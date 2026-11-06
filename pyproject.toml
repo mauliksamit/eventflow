@@ -1,8 +1,11 @@
 [project]
 name = "eventflow"
-version = "0.1.0"
-description = "Batch data pipeline: multi-source log events -> S3/Parquet data lake -> PostgreSQL star schema"
+version = "1.0.0"
+description = "Batch pipeline for the GH Archive feed: lake, Write-Audit-Publish, star schema, and a measure of how much of GitHub the feed really saw"
 requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["eventflow"]
 
 [tool.ruff]
 line-length = 130

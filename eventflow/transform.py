@@ -110,10 +110,12 @@ def valid_events(tagged: DataFrame) -> DataFrame:
 
 
 def feed_hourly(events: DataFrame) -> DataFrame:
-    """Capture rate per hour and id sequence.
+    """Capture index per hour and id sequence.
 
-    Ids advance for every event GitHub records, seen or not, so the span between the 1st and 99th
-    percentile estimates true volume regardless of how little of it the archive caught.
+    Ids advance whether or not the archive sees an event, so the span between the 1st and 99th
+    percentile measures activity independently of the feed. Ids also cover events that never
+    become public, so events / span compares hours with each other; it is not a share of
+    public events.
     """
     q = F.percentile_approx("event_id", [0.01, 0.99], 100000)
     return (events.groupBy("hour_ts", "id_series").agg(F.count("*").alias("events"), q.alias("q"))

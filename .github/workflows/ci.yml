@@ -19,6 +19,7 @@ jobs:
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       EVENTFLOW_PG_DSN: postgresql://postgres:postgres@localhost:5432/eventflow
+      EVENTFLOW_LAKE: data/lake
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
       AWS_DEFAULT_REGION: us-east-1
@@ -33,7 +34,9 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: ruff check eventflow tests
+      - run: ruff check eventflow tests dags
       - run: pytest -q
-      - name: End-to-end pipeline on a small dataset (includes data quality gate)
-        run: make small
+      - name: End-to-end on one real archive day, including a blocked publish and a reload
+        run: bash scripts/e2e.sh
+        env:
+          E2E_DAY: "2026-11-05"
