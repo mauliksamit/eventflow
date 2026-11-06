@@ -1,72 +1,104 @@
 import json
-from datetime import datetime
+from datetime import date
 
 from pyspark.sql import Row
 
-from eventflow.transform import dedupe_events, latest_order_lines, parse_access_logs, parse_clickstream, sessionize
+from eventflow.transform import feed_hourly, feed_minute, parse_events, repo_daily, valid_events
+
+DAY = date(2026, 10, 1)
 
 
-def ev(eid, user, ts, etype="page_view", pid=1):
-    return json.dumps({"event_id": eid, "user_id": user, "event_type": etype, "product_id": pid,
-                       "device": "web", "app_version": "5.4.0", "ts": ts})
+def ev(eid="100", etype="WatchEvent", ts="2026-10-01T10:00:00Z", login="octo", repo="a/b", action="started", **over):
+    doc = {"id": eid, "type": etype, "actor": {"id": 7, "login": login}, "repo": {"id": 9, "name": repo},
+           "payload": {"action": action}, "public": True, "created_at": ts}
+    doc.update(over)
+    return json.dumps(doc)
 
 
-def lines(spark, values):
-    return spark.createDataFrame([Row(value=v) for v in values])
+def parse(spark, values):
+    return parse_events(spark.createDataFrame([Row(value=v) for v in values]), DAY)
 
 
-def test_parse_clickstream_routes_bad_records_to_quarantine(spark):
-    good = ev("e1", 7, "2026-10-01T10:00:00.000-06:00")
-    missing_user = json.dumps({"event_id": "e2", "event_type": "page_view", "ts": "2026-10-01T10:00:00.000Z"})
-    bad_type = ev("e3", 7, "2026-10-01T10:00:00.000Z", etype="pageview_v2")
-    truncated = good[:25]
-    valid, quarantine = parse_clickstream(lines(spark, [good, missing_user, bad_type, truncated]))
-    assert [r.event_id for r in valid.collect()] == ["e1"]
-    reasons = sorted(r.reject_reason for r in quarantine.collect())
-    assert reasons == ["invalid_event_type", "missing_user_id", "unparseable_json"]
+def reasons(spark, values):
+    return sorted(r.reject_reason for r in parse(spark, values).filter("reject_reason IS NOT NULL").collect())
 
 
-def test_timestamps_are_normalized_to_utc(spark):
-    # 23:30 in UTC-6 on Oct 1 is 05:30 UTC on Oct 2, so the event belongs to the Oct 2 partition.
-    valid, _ = parse_clickstream(lines(spark, [ev("e1", 1, "2026-10-01T23:30:00.000-06:00")]))
-    # Check inside Spark (session time zone is UTC); collect() would convert to the machine's local zone.
-    row = valid.selectExpr("event_date", "hour(event_ts) AS h").collect()[0]
-    assert str(row.event_date) == "2026-10-02"
-    assert row.h == 5
+def test_valid_event_is_not_rejected(spark):
+    assert reasons(spark, [ev()]) == []
 
 
-def test_dedupe_keeps_one_copy_per_event_id(spark):
-    raw = [ev("e1", 1, "2026-10-01T10:00:00.000Z")] * 3 + [ev("e2", 1, "2026-10-01T10:01:00.000Z")]
-    valid, _ = parse_clickstream(lines(spark, raw))
-    assert dedupe_events(valid).count() == 2
+def test_every_bad_shape_gets_a_specific_reason(spark):
+    no_repo_name = {**json.loads(ev()), "repo": {"id": 9}}
+    bad = ['{"id": "1", "tru', ev(eid="abc"), ev(actor=None), json.dumps(no_repo_name),
+           ev(ts="not-a-date"), ev(ts="2026-10-02T00:00:00Z")]
+    assert reasons(spark, bad) == sorted(["unparseable_json", "bad_event_id", "missing_actor", "missing_repo",
+                                          "bad_timestamp", "outside_partition"])
 
 
-def test_sessionize_splits_after_30_minutes_of_inactivity(spark):
-    raw = [ev("a", 1, "2026-10-01T10:00:00.000Z"), ev("b", 1, "2026-10-01T10:20:00.000Z"),
-           ev("c", 1, "2026-10-01T10:51:00.000Z"),   # 31 min gap -> new session
-           ev("d", 2, "2026-10-01T10:05:00.000Z")]
-    valid, _ = parse_clickstream(lines(spark, raw))
-    rows = {r.event_id: r.session_id for r in sessionize(valid).collect()}
-    assert rows["a"] == rows["b"] != rows["c"]
-    assert rows["d"] not in (rows["a"], rows["c"])
+def test_missing_event_type_is_rejected_not_passed_through(spark):
+    # `NULL NOT IN (...)` is NULL, not true, so this needs an explicit null check.
+    doc = json.loads(ev())
+    del doc["type"]
+    assert reasons(spark, [json.dumps(doc)]) == ["missing_event_type"]
 
 
-def test_parse_access_logs(spark):
-    ok = '10.0.0.1 - - [10/Oct/2026:15:04:05 +0000] "POST /checkout HTTP/1.1" 503 312 0.912 "okhttp/4.12"'
-    product = '10.0.0.2 - - [10/Oct/2026:15:04:06 +0000] "GET /p/1234 HTTP/1.1" 200 5120 0.045 "curl/8.5"'
-    garbled = "\x00\x17 garbled 10.0.0.3 - - ["
-    valid, quarantine = parse_access_logs(lines(spark, [ok, product, garbled]))
-    rows = sorted(valid.collect(), key=lambda r: r.request_ts)
-    assert rows[0].status_code == 503 and rows[0].path_group == "/checkout"
-    assert abs(rows[0].latency_ms - 912.0) < 0.01
-    assert rows[1].path_group == "/p/:id"
-    assert quarantine.count() == 1
+def test_unknown_event_type_is_kept_so_new_github_events_are_not_lost(spark):
+    assert reasons(spark, [ev(etype="BrandNewEvent")]) == []
 
 
-def test_latest_order_lines_keeps_newest_status(spark):
-    df = spark.createDataFrame([
-        Row(order_id=1, line_no=1, status="placed", created_at=datetime(2026, 10, 1, 9), updated_at=datetime(2026, 10, 1, 9)),
-        Row(order_id=1, line_no=1, status="shipped", created_at=datetime(2026, 10, 1, 9), updated_at=datetime(2026, 10, 2, 9)),
-    ])
-    out = latest_order_lines(df).collect()
-    assert len(out) == 1 and out[0].status == "shipped"
+def test_nothing_is_dropped_by_parsing(spark):
+    assert parse(spark, [ev(), '{"broken', "", ev(eid="abc")]).count() == 4
+
+
+def test_duplicate_ids_collapse_to_one_event(spark):
+    assert valid_events(parse(spark, [ev(), ev(), ev(eid="101")])).count() == 2
+
+
+def test_timezone_offsets_are_normalized_before_partition_check(spark):
+    # 23:30 at -06:00 on Sep 30 is 05:30 UTC on Oct 1, inside the partition.
+    assert reasons(spark, [ev(ts="2026-09-30T23:30:00-06:00")]) == []
+
+
+def test_actors_are_classified(spark):
+    rows = [ev(eid="1", login="octo"), ev(eid="2", login="dependabot[bot]"), ev(eid="3", login="Copilot"),
+            ev(eid="4", login="cursor[bot]"), ev(eid="5", login="robot")]
+    got = {r.event_id: r.actor_class for r in valid_events(parse(spark, rows)).collect()}
+    assert got == {1: "human", 2: "bot", 3: "ai_agent", 4: "ai_agent", 5: "human"}
+
+
+def test_event_types_map_to_their_id_sequence(spark):
+    rows = [ev(eid="1", etype="PushEvent"), ev(eid="2", etype="CreateEvent"), ev(eid="3", etype="WatchEvent")]
+    got = {r.event_id: r.id_series for r in valid_events(parse(spark, rows)).collect()}
+    assert got == {1: "ref", 2: "ref", 3: "collab"}
+
+
+def test_capture_rate_uses_id_span_not_event_count(spark):
+    # 101 events spread evenly over ids 0..1,000,000 means about 0.01% of events were captured.
+    rows = [ev(eid=str(i * 10_000), ts=f"2026-10-01T10:{i % 60:02d}:00Z") for i in range(101)]
+    out = feed_hourly(valid_events(parse(spark, rows))).collect()[0]
+    assert out.events == 101
+    assert abs(out.est_total - 1_000_000) / 1_000_000 < 0.03
+    assert 0.00009 < out.capture_rate < 0.00011
+
+
+def test_capture_is_measured_per_id_sequence(spark):
+    # Ids 6 billion apart must not read as one enormous span.
+    rows = [ev(eid="1000", etype="WatchEvent"), ev(eid="2000", etype="WatchEvent"),
+            ev(eid="6000001000", etype="PushEvent"), ev(eid="6000002000", etype="PushEvent")]
+    out = {r.id_series: r for r in feed_hourly(valid_events(parse(spark, rows))).collect()}
+    assert out["ref"].est_total < 2000 and out["collab"].est_total < 2000
+
+
+def test_feed_minute_median_ignores_a_stray_id(spark):
+    rows = [ev(eid=str(i), ts="2026-10-01T10:00:30Z") for i in (10, 11, 12, 13, 9_000_000)]
+    out = feed_minute(valid_events(parse(spark, rows))).collect()[0]
+    assert out.id_median in (11, 12, 13)
+
+
+def test_repo_daily_counts_and_latest_name(spark):
+    rows = [ev(eid="1", repo="old/name", ts="2026-10-01T09:00:00Z"),
+            ev(eid="2", repo="new/name", ts="2026-10-01T11:00:00Z"),
+            ev(eid="3", etype="PullRequestEvent", action="opened"),
+            ev(eid="4", etype="PullRequestEvent", action="closed")]
+    out = repo_daily(valid_events(parse(spark, rows))).collect()[0]
+    assert (out.stars, out.prs_opened, out.events, out.repo_name) == (2, 1, 4, "new/name")
